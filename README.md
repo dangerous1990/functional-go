@@ -19,7 +19,6 @@ Functional go
 * SkipUntil
 * SkipWhile
 * Take
-* TakeLast
 * TakeUntil
 * TakeWhile
 * Distinct
