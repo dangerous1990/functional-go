@@ -7,8 +7,9 @@ Functional go
 
 # transform operation
 * Map 
-* MapTo
-* Pluck
+* MapTo 
+* Pluck - TODO
+* Reverse
 
 # filter operation
 * Filter

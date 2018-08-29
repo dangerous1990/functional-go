@@ -29,6 +29,11 @@ func TestMap(t *testing.T) {
 		return v
 	})
 }
+func TestMapTo(t *testing.T) {
+	Of([]int{1, 2, 3, 4, 5}).MapTo(10).Each(func(i int, e interface{}) {
+		assert.Equal(t, 10, e)
+	})
+}
 func TestRepeat(t *testing.T) {
 	Repeat(1, 10).Each(func(i int, v interface{}) {
 		assert.Equal(t, 1, v)

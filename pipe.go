@@ -7,7 +7,6 @@ import (
 
 type Pipe struct {
 	elements []interface{}
-	src      int
 }
 
 func newPipe(length int) *Pipe {
@@ -18,13 +17,15 @@ func newPipe(length int) *Pipe {
 
 type Transformer interface {
 	Map(fn func(v interface{}) interface{}) *Pipe
-	Reduce(initialValue interface{}, fn func(prev, v interface{}) interface{}) interface{}
-	Count() int
+	MapTo(v interface{}) *Pipe
 	Each(fn func(i int, v interface{}))
 	Filter(fn func(i int, v interface{})) *Pipe
 	First() interface{}
 	Last() interface{}
 	IsEmpty() bool
+	Count() int
+	Reduce(initialValue interface{}, fn func(prev, v interface{}) interface{}) interface{}
+	Max()
 }
 
 // Of create a pipe
@@ -72,6 +73,14 @@ func Repeat(e interface{}, times int) *Pipe {
 func (pipe *Pipe) Map(fn func(e interface{}) interface{}) *Pipe {
 	for i, v := range pipe.elements {
 		pipe.elements[i] = fn(v)
+	}
+	return pipe
+}
+
+// MapTo
+func (pipe *Pipe) MapTo(e interface{}) *Pipe {
+	for i := range pipe.elements {
+		pipe.elements[i] = e
 	}
 	return pipe
 }
