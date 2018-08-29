@@ -57,3 +57,10 @@ func TestLast(t *testing.T) {
 	last := Range(1, 10).Last()
 	assert.Equal(t, 9, last)
 }
+func TestReverse(t *testing.T) {
+	num := 9
+	Range(1, 10).Reverse().Each(func(i int, x interface{}) {
+		assert.Equal(t, num, x)
+		num--
+	})
+}

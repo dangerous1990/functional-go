@@ -18,6 +18,7 @@ func newPipe(length int) *Pipe {
 type Transformer interface {
 	Map(fn func(v interface{}) interface{}) *Pipe
 	MapTo(v interface{}) *Pipe
+	Reverse() *Pipe
 	Each(fn func(i int, v interface{}))
 	Filter(fn func(i int, v interface{})) *Pipe
 	First() interface{}
@@ -26,6 +27,7 @@ type Transformer interface {
 	Count() int
 	Reduce(initialValue interface{}, fn func(prev, v interface{}) interface{}) interface{}
 	Max()
+	Get() []interface{}
 }
 
 // Of create a pipe
@@ -83,6 +85,19 @@ func (pipe *Pipe) MapTo(e interface{}) *Pipe {
 		pipe.elements[i] = e
 	}
 	return pipe
+}
+
+// Reverse
+func (pipe *Pipe) Reverse() *Pipe {
+	for i, j := 0, len(pipe.elements)-1; i < j; i, j = i+1, j-1 {
+		temp := pipe.elements[i]
+		pipe.elements[i] = pipe.elements[j]
+		pipe.elements[j] = temp
+	}
+	return pipe
+}
+func (pipe *Pipe) Get() []interface{} {
+	return pipe.elements
 }
 
 // Count

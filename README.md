@@ -1,9 +1,14 @@
 Functional go 
 
+# basic
+* Get
+
 # builder opreation
 * Of
 * Range
 * Repeat
+
+
 
 # transform operation
 * Map 
