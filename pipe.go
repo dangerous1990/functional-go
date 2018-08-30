@@ -1,156 +1,137 @@
 package pipe
 
 import (
-	"fmt"
 	"reflect"
 )
 
-type Pipe struct {
-	elements []interface{}
-}
+var INT_TYPE reflect.Type = reflect.TypeOf(int(0))
 
-func newPipe(length int) *Pipe {
-	p := &Pipe{}
-	p.elements = make([]interface{}, length)
-	return p
+type Stream struct {
+	parentStream *Stream
+	source       interface{}  // source data it must be array or slice
+	sliceType    reflect.Type // source data sliceType
+	elementType  reflect.Type // source data element type
+	sourceType   reflect.Type
+	sourceValue  reflect.Value
 }
-
+type FuncDesp struct {
+	inputType  []reflect.Type
+	outputType reflect.Type // only one return field
+	funcType   reflect.Type
+}
 type Transformer interface {
-	Map(fn func(v interface{}) interface{}) *Pipe
-	MapTo(v interface{}) *Pipe
-	Reverse() *Pipe
-	Each(fn func(i int, v interface{}))
-	Filter(fn func(i int, v interface{})) *Pipe
-	First() interface{}
-	Last() interface{}
-	IsEmpty() bool
-	Count() int
-	Reduce(initialValue interface{}, fn func(prev, v interface{}) interface{}) interface{}
-	Max()
-	Get() []interface{}
+	Map(fn interface{}) *Stream
+	Reduce(initialValue interface{}, fn interface{}) interface{}
+	// MapTo(v interface{}) *Stream
+	// Reverse() *Stream
+	// Each(fn func(i int, v interface{}))
+	// Filter(fn func(i int, v interface{})) *Stream
+	// First() interface{}
+	// Last() interface{}
+	// IsEmpty() bool
+	// Count() int
+	// Max()
+	// Get() interface{}
 }
 
-// Of create a pipe
-func Of(elements interface{}) *Pipe {
-	var p *Pipe
-	rValue := reflect.ValueOf(elements)
-	if !(rValue.Kind() == reflect.Array || rValue.Kind() == reflect.Slice) {
+func (stream *Stream) Length() int {
+	return reflect.ValueOf(stream.source).Len()
+}
+func newStream(source interface{}) *Stream {
+	sourceValue := reflect.ValueOf(source)
+	sourceType := reflect.TypeOf(source)
+	if !(sourceValue.Kind() == reflect.Array || sourceValue.Kind() == reflect.Slice) {
 		panic("of func error parameters only support array or slice")
 	}
-	len := rValue.Len()
-	p = newPipe(len)
-	for i := 0; i < len; i++ {
-		p.elements[i] = rValue.Index(i).Interface()
+	elementType := sourceType.Elem()
+	sliceType := reflect.SliceOf(elementType)
+	return &Stream{
+		parentStream: nil,
+		source:       source,
+		sliceType:    sliceType,
+		elementType:  elementType,
+		sourceType:   sourceType,
+		sourceValue:  sourceValue,
 	}
-	return p
+}
+func isTypeMatched(a, b reflect.Type) bool {
+	if a == b {
+		return true
+	}
+	if a.Kind() == reflect.Interface {
+		return b.Implements(a)
+	}
+	return false
 }
 
-// Range [start,end)
-func Range(start, end int) *Pipe {
-	if start < 0 {
-		panic(fmt.Sprintf("range func error parameters start[%d] must gather than 0 ", start))
+func isRightFunc(funcType reflect.Type, inputTypes, outputTypes []reflect.Type) bool {
+	if funcType.Kind() != reflect.Func {
+		return false
 	}
-	if end-start < 0 {
-		panic(fmt.Sprintf("range func error parameters start[%d] must less than end[%d] ", start, end))
+	if funcType.NumIn() > len(inputTypes) {
+		return false
 	}
-	p := newPipe(end - start)
-	index := 0
-	for i := start; i < end; i++ {
-		p.elements[index] = i
-		index++
+	if funcType.NumOut() != len(outputTypes) {
+		return false
 	}
-	return p
+	// if !isTypeMatched(funcType.Out(0), outputTypes[0]) {
+	// 	return false
+	// }
+	if funcType.NumIn() == len(inputTypes) {
+		for i, t := range inputTypes {
+			if !isTypeMatched(t, funcType.In(i)) {
+				return false
+			}
+		}
+	}
+	if funcType.NumIn() < len(inputTypes) {
+		if !isTypeMatched(funcType.In(0), inputTypes[len(inputTypes)-1]) {
+			return false
+		}
+	}
+
+	return true
 }
 
-// Repeat
-func Repeat(e interface{}, times int) *Pipe {
-	p := newPipe(times)
-	for i := 0; i < times; i++ {
-		p.elements[i] = e
-	}
-	return p
+// Of create a Stream
+func Of(source interface{}) *Stream {
+	return newStream(source)
 }
 
 // Map
-func (pipe *Pipe) Map(fn func(e interface{}) interface{}) *Pipe {
-	for i, v := range pipe.elements {
-		pipe.elements[i] = fn(v)
+func (stream *Stream) Map(fn interface{}) *Stream {
+	fnValue := reflect.ValueOf(fn)
+	fnType := reflect.TypeOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{INT_TYPE, stream.elementType}, []reflect.Type{nil}) {
+		panic("map invalid func")
 	}
-	return pipe
-}
-
-// MapTo
-func (pipe *Pipe) MapTo(e interface{}) *Pipe {
-	for i := range pipe.elements {
-		pipe.elements[i] = e
-	}
-	return pipe
-}
-
-// Reverse
-func (pipe *Pipe) Reverse() *Pipe {
-	for i, j := 0, len(pipe.elements)-1; i < j; i, j = i+1, j-1 {
-		temp := pipe.elements[i]
-		pipe.elements[i] = pipe.elements[j]
-		pipe.elements[j] = temp
-	}
-	return pipe
-}
-func (pipe *Pipe) Get() []interface{} {
-	return pipe.elements
-}
-
-// Count
-func (pipe *Pipe) Count() int {
-	if pipe.elements == nil {
-		return 0
-	}
-	return len(pipe.elements)
-}
-
-// Each
-func (pipe *Pipe) Each(fn func(i int, v interface{})) {
-	for i, v := range pipe.elements {
-		fn(i, v)
-	}
-}
-
-// Filter
-func (pipe *Pipe) Filter(fn func(i int, v interface{}) bool) *Pipe {
-	filterElements := make([]interface{}, 0)
-	for i, v := range pipe.elements {
-		if fn(i, v) {
-			filterElements = append(filterElements, v)
+	resultSlice := reflect.MakeSlice(reflect.SliceOf(fnType.Out(0)), 0, stream.Length())
+	for i := 0; i < stream.Length(); i++ {
+		if fnType.NumIn() == 1 {
+			resultSlice = reflect.Append(resultSlice, fnValue.Call([]reflect.Value{stream.sourceValue.Index(i)})[0])
+		}
+		if fnType.NumIn() == 2 {
+			resultSlice = reflect.Append(resultSlice, fnValue.Call([]reflect.Value{reflect.ValueOf(i), stream.sourceValue.Index(i)})[0])
 		}
 	}
-	pipe.elements = filterElements
-	return pipe
+	return newStream(resultSlice.Interface())
+}
+
+// ToSlice
+func (stream *Stream) ToSlice() interface{} {
+	return stream.source
 }
 
 // Reduce initialValue 初始值
-func (pipe *Pipe) Reduce(initialValue interface{}, fn func(prev, e interface{}) interface{}) interface{} {
-	prevValue := initialValue
-	for _, v := range pipe.elements {
-		prevValue = fn(prevValue, v)
+func (stream *Stream) Reduce(initialValue interface{}, fn interface{}) interface{} {
+	fnType := reflect.TypeOf(fn)
+	fnValue := reflect.ValueOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{reflect.TypeOf(initialValue), stream.elementType}, []reflect.Type{reflect.TypeOf(initialValue)}) {
+		panic("wrong reduce func")
 	}
-	return prevValue
-}
-func (pipe *Pipe) First() interface{} {
-	if pipe.IsEmpty() {
-		return nil
+	initValue := reflect.ValueOf(initialValue)
+	for i := 0; i < stream.Length(); i++ {
+		initValue = fnValue.Call([]reflect.Value{initValue, stream.sourceValue.Index(i)})[0]
 	}
-	return pipe.elements[0]
-}
-
-func (pipe *Pipe) IsEmpty() bool {
-	if pipe.elements == nil {
-		return true
-	}
-	return len(pipe.elements) == 0
-}
-func (pipe *Pipe) Last() interface{} {
-	if pipe.IsEmpty() {
-		return nil
-	}
-	return pipe.elements[len(pipe.elements)-1]
+	return initValue.Interface()
 }
