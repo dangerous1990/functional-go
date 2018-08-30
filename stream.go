@@ -23,15 +23,14 @@ type transformer interface {
 	Reduce(initialValue interface{}, fn interface{}) interface{}
 	Filter(fn interface{}) *Stream
 	Sort(lessFunc interface{}) *Stream
-	// MapTo(v interface{}) *Stream
-	// Reverse() *Stream
-	// Each(fn func(i int, v interface{}))
+	Reverse() *Stream
 	// First() interface{}
 	// Last() interface{}
+	// MapTo(v interface{}) *Stream
+	// Each(fn func(i int, v interface{}))
 	// IsEmpty() bool
 	// Count() int
 	// Max()
-	// Get() interface{}
 }
 
 func newStream(source interface{}) *Stream {
@@ -196,7 +195,7 @@ func (stream *Stream) Sort(lessFunc interface{}) *Stream {
 	lessFuncValue := reflect.ValueOf(lessFunc)
 	lessFuncType := lessFuncValue.Type()
 	if !isRightFunc(lessFuncType, []reflect.Type{stream.elementType, stream.elementType}, []reflect.Type{boolType}) {
-		panic("sort less function invalid")
+		panic("Stream.Sort(fn) lessFunc is invalid func")
 	}
 	delegate := &sortDelegate{
 		Arr:      reflect.ValueOf(stream.Get()),
@@ -205,4 +204,15 @@ func (stream *Stream) Sort(lessFunc interface{}) *Stream {
 	// sort
 	sort.Stable(delegate)
 	return newStream(delegate.Arr.Interface())
+}
+
+// Reverse
+func (stream *Stream) Reverse() *Stream {
+	for i, j := 0, stream.Length()-1; i < j; i, j = i+1, j-1 {
+		ti := stream.sourceValue.Index(i).Interface()
+		tj := stream.sourceValue.Index(j).Interface()
+		stream.sourceValue.Index(i).Set(reflect.ValueOf(tj))
+		stream.sourceValue.Index(j).Set(reflect.ValueOf(ti))
+	}
+	return stream
 }

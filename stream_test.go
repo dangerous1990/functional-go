@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,5 +55,42 @@ func TestSort(t *testing.T) {
 	}).Get().([]int)
 	for i, v := range result {
 		assert.Equal(t, i, v)
+	}
+}
+
+const num = 1000
+
+func TestGeneralCost(t *testing.T) {
+	slice := make([]int, num)
+	count := num
+	for count > 0 {
+		slice = append(slice, rand.Int())
+		count--
+	}
+	for i, v := range slice {
+		slice[i] = v * 2
+	}
+
+}
+
+func TestFunctionalCost(t *testing.T) {
+	slice := make([]int, num)
+	count := num
+	for count > 0 {
+		slice = append(slice, rand.Int())
+		count--
+	}
+	var _ = Of([]int{1, 2, 3, 4, 5}).Map(func(i, value int) int {
+		return value * 2
+	})
+
+}
+
+func TestReverse(t *testing.T) {
+	result := Of([]int{0, 1, 2, 3, 4, 5}).Reverse().Get().([]int)
+	index := 5
+	for _, v := range result {
+		assert.Equal(t, index, v)
+		index--
 	}
 }
