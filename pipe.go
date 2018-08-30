@@ -73,9 +73,9 @@ func isRightFunc(funcType reflect.Type, inputTypes, outputTypes []reflect.Type) 
 	if funcType.NumOut() != len(outputTypes) {
 		return false
 	}
-	// if !isTypeMatched(funcType.Out(0), outputTypes[0]) {
-	// 	return false
-	// }
+	if !isTypeMatched(funcType.Out(0), outputTypes[0]) {
+		return false
+	}
 	if funcType.NumIn() == len(inputTypes) {
 		for i, t := range inputTypes {
 			if !isTypeMatched(t, funcType.In(i)) {
@@ -133,7 +133,10 @@ func Of(source interface{}) *Stream {
 func (stream *Stream) Map(fn interface{}) *Stream {
 	fnValue := reflect.ValueOf(fn)
 	fnType := reflect.TypeOf(fn)
-	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{nil}) {
+	if fnType.NumOut() < 1 {
+		panic("Stream.Map(fn), fn is invalid func, must be return a value")
+	}
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{fnType.Out(0)}) {
 		panic("Stream.Map(fn), fn is invalid func")
 	}
 	resultSlice := reflect.MakeSlice(reflect.SliceOf(fnType.Out(0)), 0, stream.Length())
