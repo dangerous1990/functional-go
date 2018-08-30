@@ -24,13 +24,9 @@ type transformer interface {
 	Filter(fn interface{}) *Stream
 	Sort(lessFunc interface{}) *Stream
 	Reverse() *Stream
-	// First() interface{}
-	// Last() interface{}
-	// MapTo(v interface{}) *Stream
-	// Each(fn func(i int, v interface{}))
-	// IsEmpty() bool
-	// Count() int
-	// Max()
+	First() interface{}
+	Last() interface{}
+	Each(fn interface{})
 }
 
 func newStream(source interface{}) *Stream {
@@ -72,7 +68,7 @@ func isRightFunc(funcType reflect.Type, inputTypes, outputTypes []reflect.Type) 
 	if funcType.NumOut() != len(outputTypes) {
 		return false
 	}
-	if !isTypeMatched(funcType.Out(0), outputTypes[0]) {
+	if funcType.NumOut() > 0 && !isTypeMatched(funcType.Out(0), outputTypes[0]) {
 		return false
 	}
 	if funcType.NumIn() == len(inputTypes) {
@@ -215,4 +211,35 @@ func (stream *Stream) Reverse() *Stream {
 		stream.sourceValue.Index(j).Set(reflect.ValueOf(ti))
 	}
 	return stream
+}
+
+// First
+func (stream *Stream) First() interface{} {
+	if stream.Length() < 1 {
+		return nil
+	}
+	return stream.sourceValue.Index(0).Interface()
+}
+
+// Last
+func (stream *Stream) Last() interface{} {
+	return stream.sourceValue.Index(stream.Length() - 1).Interface()
+}
+
+// Each
+func (stream *Stream) Each(fn interface{}) {
+	fnType := reflect.TypeOf(fn)
+	fnValue := reflect.ValueOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{}) {
+		panic("Stream.Filter(fn), fn is invalid func")
+	}
+	for i := 0; i < stream.Length(); i++ {
+		elementValue := stream.sourceValue.Index(i)
+		if fnType.NumIn() == 1 {
+			fnValue.Call([]reflect.Value{elementValue})
+		}
+		if fnType.NumIn() == 2 {
+			fnValue.Call([]reflect.Value{reflect.ValueOf(i), elementValue})
+		}
+	}
 }

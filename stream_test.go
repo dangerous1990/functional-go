@@ -94,3 +94,16 @@ func TestReverse(t *testing.T) {
 		index--
 	}
 }
+func TestEach(t *testing.T) {
+	index := 0
+	Of([]int{0, 1, 2, 3, 4, 5}).Each(func(v int) {
+		assert.Equal(t, index, v)
+		index++
+	})
+}
+func TestFirstLast(t *testing.T) {
+	first := Of([]int{0, 1, 2, 3, 4, 5}).First().(int)
+	last := Of([]int{0, 1, 2, 3, 4, 5}).Last().(int)
+	assert.Equal(t, 0, first)
+	assert.Equal(t, 5, last)
+}
