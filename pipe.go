@@ -2,30 +2,30 @@ package pipe
 
 import (
 	"reflect"
+	"sort"
 )
 
-var INT_TYPE reflect.Type = reflect.TypeOf(int(0))
+var (
+	intType  = reflect.TypeOf(0)
+	boolType = reflect.TypeOf(true)
+)
 
 type Stream struct {
-	parentStream *Stream
-	source       interface{}  // source data it must be array or slice
-	sliceType    reflect.Type // source data sliceType
-	elementType  reflect.Type // source data element type
-	sourceType   reflect.Type
-	sourceValue  reflect.Value
+	source      interface{}  // source data it must be array or slice
+	sliceType   reflect.Type // source data sliceType
+	elementType reflect.Type // source data element type
+	sourceType  reflect.Type
+	sourceValue reflect.Value
 }
-type FuncDesp struct {
-	inputType  []reflect.Type
-	outputType reflect.Type // only one return field
-	funcType   reflect.Type
-}
-type Transformer interface {
+
+type transformer interface {
 	Map(fn interface{}) *Stream
 	Reduce(initialValue interface{}, fn interface{}) interface{}
+	Filter(fn interface{}) *Stream
+	Sort(lessFunc interface{}) *Stream
 	// MapTo(v interface{}) *Stream
 	// Reverse() *Stream
 	// Each(fn func(i int, v interface{}))
-	// Filter(fn func(i int, v interface{})) *Stream
 	// First() interface{}
 	// Last() interface{}
 	// IsEmpty() bool
@@ -34,24 +34,23 @@ type Transformer interface {
 	// Get() interface{}
 }
 
-func (stream *Stream) Length() int {
-	return reflect.ValueOf(stream.source).Len()
-}
 func newStream(source interface{}) *Stream {
+	if source == nil {
+		panic("new stream failed, source is nil")
+	}
 	sourceValue := reflect.ValueOf(source)
 	sourceType := reflect.TypeOf(source)
 	if !(sourceValue.Kind() == reflect.Array || sourceValue.Kind() == reflect.Slice) {
-		panic("of func error parameters only support array or slice")
+		panic("new stream failed, error parameters only support array or slice")
 	}
 	elementType := sourceType.Elem()
 	sliceType := reflect.SliceOf(elementType)
 	return &Stream{
-		parentStream: nil,
-		source:       source,
-		sliceType:    sliceType,
-		elementType:  elementType,
-		sourceType:   sourceType,
-		sourceValue:  sourceValue,
+		source:      source,
+		sliceType:   sliceType,
+		elementType: elementType,
+		sourceType:  sourceType,
+		sourceValue: sourceValue,
 	}
 }
 func isTypeMatched(a, b reflect.Type) bool {
@@ -93,17 +92,49 @@ func isRightFunc(funcType reflect.Type, inputTypes, outputTypes []reflect.Type) 
 	return true
 }
 
+type sortDelegate struct {
+	Arr      reflect.Value
+	lessFunc reflect.Value
+}
+
+func (s *sortDelegate) Len() int {
+	return s.Arr.Len()
+}
+
+func (s *sortDelegate) Less(i, j int) bool {
+	outs := s.lessFunc.Call([]reflect.Value{s.Arr.Index(i), s.Arr.Index(j)})
+	return outs[0].Interface().(bool)
+}
+
+func (s *sortDelegate) Swap(i, j int) {
+	ti := s.Arr.Index(i).Interface()
+	tj := s.Arr.Index(j).Interface()
+	s.Arr.Index(i).Set(reflect.ValueOf(tj))
+	s.Arr.Index(j).Set(reflect.ValueOf(ti))
+}
+
+// Length get source length
+func (stream *Stream) Length() int {
+	return stream.sourceValue.Len()
+}
+
+// Get get source
+func (stream *Stream) Get() interface{} {
+	return stream.source
+}
+
 // Of create a Stream
 func Of(source interface{}) *Stream {
 	return newStream(source)
 }
 
-// Map
+// Map fn support input one or two paramter eg. func(i,v int) int   func(v int) int
+// fn must be return a value
 func (stream *Stream) Map(fn interface{}) *Stream {
 	fnValue := reflect.ValueOf(fn)
 	fnType := reflect.TypeOf(fn)
-	if !isRightFunc(fnType, []reflect.Type{INT_TYPE, stream.elementType}, []reflect.Type{nil}) {
-		panic("map invalid func")
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{nil}) {
+		panic("Stream.Map(fn), fn is invalid func")
 	}
 	resultSlice := reflect.MakeSlice(reflect.SliceOf(fnType.Out(0)), 0, stream.Length())
 	for i := 0; i < stream.Length(); i++ {
@@ -117,21 +148,58 @@ func (stream *Stream) Map(fn interface{}) *Stream {
 	return newStream(resultSlice.Interface())
 }
 
-// ToSlice
-func (stream *Stream) ToSlice() interface{} {
-	return stream.source
-}
-
-// Reduce initialValue 初始值
+// Reduce fn eg. func(prev,v int) int
+// prev type must be equal return type
 func (stream *Stream) Reduce(initialValue interface{}, fn interface{}) interface{} {
 	fnType := reflect.TypeOf(fn)
 	fnValue := reflect.ValueOf(fn)
 	if !isRightFunc(fnType, []reflect.Type{reflect.TypeOf(initialValue), stream.elementType}, []reflect.Type{reflect.TypeOf(initialValue)}) {
-		panic("wrong reduce func")
+		panic("Stream.Reduce(fn), fn is invalid func")
 	}
 	initValue := reflect.ValueOf(initialValue)
 	for i := 0; i < stream.Length(); i++ {
 		initValue = fnValue.Call([]reflect.Value{initValue, stream.sourceValue.Index(i)})[0]
 	}
 	return initValue.Interface()
+}
+
+// Filter fn support input one or two paramter eg. func(i,v int) int   func(v int) int
+// fn must be return bool
+func (stream *Stream) Filter(fn interface{}) *Stream {
+	fnType := reflect.TypeOf(fn)
+	fnValue := reflect.ValueOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{boolType}) {
+		panic("Stream.Filter(fn), fn is invalid func")
+	}
+	resultSlice := reflect.MakeSlice(stream.sliceType, 0, stream.Length())
+	for i := 0; i < stream.Length(); i++ {
+		elementValue := stream.sourceValue.Index(i)
+		if fnType.NumIn() == 1 {
+			if fnValue.Call([]reflect.Value{elementValue})[0].Bool() {
+				resultSlice = reflect.Append(resultSlice, elementValue)
+			}
+		}
+		if fnType.NumIn() == 2 {
+			if fnValue.Call([]reflect.Value{reflect.ValueOf(i), elementValue})[0].Bool() {
+				resultSlice = reflect.Append(resultSlice, elementValue)
+			}
+		}
+	}
+	return newStream(resultSlice.Interface())
+}
+
+// Sort  lessFunc eg. func(a,b int) bool
+func (stream *Stream) Sort(lessFunc interface{}) *Stream {
+	lessFuncValue := reflect.ValueOf(lessFunc)
+	lessFuncType := lessFuncValue.Type()
+	if !isRightFunc(lessFuncType, []reflect.Type{stream.elementType, stream.elementType}, []reflect.Type{boolType}) {
+		panic("sort less function invalid")
+	}
+	delegate := &sortDelegate{
+		Arr:      reflect.ValueOf(stream.Get()),
+		lessFunc: lessFuncValue,
+	}
+	// sort
+	sort.Stable(delegate)
+	return newStream(delegate.Arr.Interface())
 }
