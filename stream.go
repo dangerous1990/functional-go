@@ -5,15 +5,27 @@ import (
 )
 
 type Stream struct {
-	source      interface{}  // source data it must be array or slice
-	sliceType   reflect.Type // source data sliceType
-	elementType reflect.Type // source data element type
+	// source data it must be array or slice
+	source interface{}
+	// source data sliceType
+	sliceType reflect.Type
+	// source data element type
+	elementType reflect.Type
 	sourceType  reflect.Type
 	sourceValue reflect.Value
-	err         error // default is nil ,when operation panic is the recover error
 }
 
 // Get get source
 func (stream *Stream) Get() interface{} {
 	return stream.source
+}
+
+// Length get source length
+func (stream *Stream) Length() int {
+	return stream.sourceValue.Len()
+}
+
+// IsEmpty Stream slice is empty
+func (stream *Stream) IsEmpty() bool {
+	return stream.Length() == 0
 }

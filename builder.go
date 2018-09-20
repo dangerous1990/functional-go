@@ -4,6 +4,7 @@ import "reflect"
 
 type builder interface {
 	Of(slice interface{}) *Stream
+	Repeat(e interface{}, times int) *Stream
 }
 
 func newStream(source interface{}) *Stream {
@@ -29,4 +30,19 @@ func newStream(source interface{}) *Stream {
 // Of create a Stream
 func Of(source interface{}) *Stream {
 	return newStream(source)
+}
+
+// Repeat
+func Repeat(e interface{}, times int) *Stream {
+	if times < 1 {
+		panic("Stream.Repeat times must greater than 0 ")
+	}
+	elementType := reflect.TypeOf(e)
+	sliceType := reflect.SliceOf(elementType)
+	slice := reflect.MakeSlice(sliceType, times, times)
+	for times > 0 {
+		slice.Index(times - 1).Set(reflect.ValueOf(e))
+		times--
+	}
+	return Of(slice.Interface())
 }

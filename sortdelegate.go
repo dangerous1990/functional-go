@@ -22,8 +22,3 @@ func (s *sortDelegate) Swap(i, j int) {
 	s.Arr.Index(i).Set(reflect.ValueOf(tj))
 	s.Arr.Index(j).Set(reflect.ValueOf(ti))
 }
-
-// Length get source length
-func (stream *Stream) Length() int {
-	return stream.sourceValue.Len()
-}

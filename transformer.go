@@ -10,6 +10,8 @@ var (
 	boolType = reflect.TypeOf(true)
 )
 
+const EmptyElement string = "stream_nil"
+
 type transformer interface {
 	Map(fn interface{}) *Stream
 	Reduce(initialValue interface{}, fn interface{}) interface{}
@@ -113,7 +115,7 @@ func (stream *Stream) Reverse() *Stream {
 // First
 func (stream *Stream) First() interface{} {
 	if stream.Length() < 1 {
-		return nil
+		return EmptyElement
 	}
 	return stream.sourceValue.Index(0).Interface()
 }
@@ -121,7 +123,7 @@ func (stream *Stream) First() interface{} {
 // Last
 func (stream *Stream) Last() interface{} {
 	if stream.Length() < 1 {
-		return nil
+		return EmptyElement
 	}
 	return stream.sourceValue.Index(stream.Length() - 1).Interface()
 }
