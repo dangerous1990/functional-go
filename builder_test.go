@@ -15,14 +15,14 @@ func TestOf(t *testing.T) {
 	}
 }
 
-func TestRepect(t *testing.T) {
+func TestRepeat(t *testing.T) {
 	result := Repeat(2, 10).Get().([]int)
 	for _, v := range result {
 		assert.Equal(t, 2, v)
 	}
 }
 
-func TestRepectWithStruct(t *testing.T) {
+func TestRepeatWithStruct(t *testing.T) {
 	type square struct {
 		x int
 		y int
