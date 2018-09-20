@@ -36,3 +36,10 @@ func TestRepectWithStruct(t *testing.T) {
 		assert.Equal(t, 20, v.y)
 	}
 }
+
+func TestRangeInt(t *testing.T) {
+	RangeInt(0, 10).Each(func(i, v int) {
+		assert.Equal(t, i, v)
+	})
+
+}

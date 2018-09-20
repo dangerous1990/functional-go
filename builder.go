@@ -2,11 +2,6 @@ package stream
 
 import "reflect"
 
-type builder interface {
-	Of(slice interface{}) *Stream
-	Repeat(e interface{}, times int) *Stream
-}
-
 func newStream(source interface{}) *Stream {
 	if source == nil {
 		panic("new stream failed, source is nil")
@@ -45,4 +40,16 @@ func Repeat(e interface{}, times int) *Stream {
 		times--
 	}
 	return Of(slice.Interface())
+}
+
+// RangeInt [from,to)
+func RangeInt(from, to int) *Stream {
+	if from > to {
+		panic("Stream.Repeat from must less than to ")
+	}
+	slice := make([]int, to-from)
+	for i, j := 0, from; i < to; i, j = i+1, j+1 {
+		slice[i] = j
+	}
+	return Of(slice)
 }
