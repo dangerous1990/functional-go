@@ -37,3 +37,10 @@ func TestSkip(t *testing.T) {
 		x++
 	})
 }
+
+func TestFind(t *testing.T) {
+	result := Of([]int{1, 2, 3, 4, 5}).Find(func(v int) bool {
+		return v%2 == 0
+	}).(int)
+	assert.Equal(t, 2, result)
+}
