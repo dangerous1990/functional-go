@@ -50,3 +50,13 @@ func TestFindIndex(t *testing.T) {
 	})
 	assert.Equal(t, 1, result)
 }
+func TestSkipUntil(t *testing.T) {
+	case1 := Of([]int{1, 2, 3, 4, 5}).SkipUntil(func(v int) bool {
+		return 4 == v
+	}).Get().([]int)[0]
+	assert.Equal(t, 4, case1)
+	case2 := Of([]int{1, 2, 3, 4, 5}).SkipUntil(func(v int) bool {
+		return 10 == v
+	})
+	assert.Equal(t, true, case2.IsEmpty())
+}

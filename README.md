@@ -40,8 +40,6 @@ Functional go
 
 # math and agg operation
 * Count
-* Max
-* Min
 * Reduce
 
 

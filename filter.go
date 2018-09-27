@@ -66,6 +66,24 @@ func (stream *Stream) Skip(n int) *Stream {
 	return Of(slice.Interface())
 }
 
+// SkipUntil
+func (stream *Stream) SkipUntil(fn interface{}) *Stream {
+	fnType := reflect.TypeOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{boolType}) {
+		panic("Stream.Filter(fn), fn is invalid func")
+	}
+	index := stream.FindIndex(fn)
+	if index == -1 {
+		return Of(reflect.MakeSlice(stream.sliceType, 0, 0).Interface())
+	}
+
+	resultSlice := reflect.MakeSlice(stream.sliceType, stream.Length()-index, stream.Length())
+	for i, j := index, 0; i < stream.Length(); i, j = i+1, j+1 {
+		resultSlice.Index(j).Set(stream.sourceValue.Index(i))
+	}
+	return Of(resultSlice.Interface())
+}
+
 // Find
 func (stream *Stream) Find(fn interface{}) interface{} {
 	fnType := reflect.TypeOf(fn)
