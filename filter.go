@@ -10,6 +10,7 @@ type filter interface {
 	Last() interface{}
 	Skip(n int) interface{}
 	Find(fn interface{}) interface{}
+	FindIndex(fn interface{}) int
 }
 
 // Filter fn support input one or two args eg. func(i,v int) int   func(v int) int
@@ -86,4 +87,27 @@ func (stream *Stream) Find(fn interface{}) interface{} {
 		}
 	}
 	return nil
+}
+
+// FindIndex
+func (stream *Stream) FindIndex(fn interface{}) int {
+	fnType := reflect.TypeOf(fn)
+	fnValue := reflect.ValueOf(fn)
+	if !isRightFunc(fnType, []reflect.Type{intType, stream.elementType}, []reflect.Type{boolType}) {
+		panic("Stream.Find(fn), fn is invalid func")
+	}
+	for i := 0; i < stream.Length(); i++ {
+		elementValue := stream.sourceValue.Index(i)
+		if fnType.NumIn() == 1 {
+			if fnValue.Call([]reflect.Value{elementValue})[0].Bool() {
+				return i
+			}
+		}
+		if fnType.NumIn() == 2 {
+			if fnValue.Call([]reflect.Value{reflect.ValueOf(i), elementValue})[0].Bool() {
+				return i
+			}
+		}
+	}
+	return -1
 }

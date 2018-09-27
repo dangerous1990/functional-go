@@ -44,3 +44,9 @@ func TestFind(t *testing.T) {
 	}).(int)
 	assert.Equal(t, 2, result)
 }
+func TestFindIndex(t *testing.T) {
+	result := Of([]int{1, 2, 3, 4, 5}).FindIndex(func(v int) bool {
+		return v%2 == 0
+	})
+	assert.Equal(t, 1, result)
+}
