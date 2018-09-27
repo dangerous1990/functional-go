@@ -60,3 +60,14 @@ func TestSkipUntil(t *testing.T) {
 	})
 	assert.Equal(t, true, case2.IsEmpty())
 }
+
+func TestSkipWhile(t *testing.T) {
+	case1 := Of([]int{1, 2, 3, 4, 5}).SkipWhile(func(v int) bool {
+		return v >= 5
+	})
+	assert.Equal(t, 5, case1.Length())
+	case2 := Of([]int{1, 2, 3, 4, 5}).SkipWhile(func(v int) bool {
+		return v < 3
+	})
+	assert.Equal(t, 3, case2.Length())
+}
