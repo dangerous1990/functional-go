@@ -14,8 +14,6 @@ not support high-order functional
 
 # transform operation
 * Map 
-* MapTo 
-* Pluck - TODO
 * Reverse
 
 # filter operation
@@ -26,10 +24,6 @@ not support high-order functional
 * SkipLast
 * SkipUntil
 * SkipWhile
-* Take
-* TakeUntil
-* TakeWhile
-* Distinct
 
 # condition and bool operation
 * Find
