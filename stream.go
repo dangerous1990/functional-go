@@ -29,3 +29,17 @@ func (stream *Stream) Length() int {
 func (stream *Stream) IsEmpty() bool {
 	return stream.Length() == 0
 }
+
+// GetByIndex get element by index
+func (stream *Stream) GetElement(index int) interface{} {
+	return stream.sourceValue.Index(index).Interface()
+}
+
+// Index
+func (stream *Stream) Index(index int) interface{} {
+	return stream.getElement(index).Interface()
+}
+
+func (stream *Stream) getElement(index int) reflect.Value {
+	return stream.sourceValue.Index(index)
+}

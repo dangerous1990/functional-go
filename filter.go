@@ -123,7 +123,7 @@ func (stream *Stream) Find(fn interface{}) interface{} {
 		panic("Stream.Find(fn), fn is invalid func")
 	}
 	for i := 0; i < stream.Length(); i++ {
-		elementValue := stream.sourceValue.Index(i)
+		elementValue := stream.getElement(i)
 		if fnType.NumIn() == 1 {
 			if fnValue.Call([]reflect.Value{elementValue})[0].Bool() {
 				return elementValue.Interface()
@@ -146,14 +146,13 @@ func (stream *Stream) FindIndex(fn interface{}) int {
 		panic("Stream.Find(fn), fn is invalid func")
 	}
 	for i := 0; i < stream.Length(); i++ {
-		elementValue := stream.sourceValue.Index(i)
 		if fnType.NumIn() == 1 {
-			if fnValue.Call([]reflect.Value{elementValue})[0].Bool() {
+			if fnValue.Call([]reflect.Value{stream.getElement(i)})[0].Bool() {
 				return i
 			}
 		}
 		if fnType.NumIn() == 2 {
-			if fnValue.Call([]reflect.Value{reflect.ValueOf(i), elementValue})[0].Bool() {
+			if fnValue.Call([]reflect.Value{reflect.ValueOf(i), stream.getElement(i)})[0].Bool() {
 				return i
 			}
 		}
