@@ -32,9 +32,7 @@ func Repeat(e interface{}, times int) *Stream {
 	if times < 1 {
 		panic("Stream.Repeat times must greater than 0 ")
 	}
-	elementType := reflect.TypeOf(e)
-	sliceType := reflect.SliceOf(elementType)
-	slice := reflect.MakeSlice(sliceType, times, times)
+	slice := makeReflectSlice(reflect.TypeOf(e), times, times)
 	for times > 0 {
 		slice.Index(times - 1).Set(reflect.ValueOf(e))
 		times--

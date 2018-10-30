@@ -74,7 +74,7 @@ func (stream *Stream) SkipUntil(fn interface{}) *Stream {
 	}
 	index := stream.FindIndex(fn)
 	if index == -1 {
-		return Of(reflect.MakeSlice(stream.sliceType, 0, 0).Interface())
+		return Of(makeEmptyReflectSlice(stream.sliceType).Interface())
 	}
 
 	resultSlice := reflect.MakeSlice(stream.sliceType, stream.Length()-index, stream.Length())
