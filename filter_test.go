@@ -1,4 +1,4 @@
-package stream
+package functional
 
 import (
 	"testing"
@@ -24,8 +24,8 @@ func TestFilter(t *testing.T) {
 }
 
 func TestFirstLast(t *testing.T) {
-	first := Of([]int{0, 1, 2, 3, 4, 5}).First().(int)
-	last := Of([]int{0, 1, 2, 3, 4, 5}).Last().(int)
+	first := Of([]int{0, 1, 2, 3, 4, 5}).First().Get().(int)
+	last := Of([]int{0, 1, 2, 3, 4, 5}).Last().Get().(int)
 	assert.Equal(t, 0, first)
 	assert.Equal(t, 5, last)
 }

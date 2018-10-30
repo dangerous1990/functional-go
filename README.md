@@ -34,4 +34,12 @@ not support high-order functional
 * Count
 * Reduce
 
+# optional
+
+* Get
+* OrElse
+* OrElseGet
+* IfPresent
+* IsPresent
+
 

@@ -1,7 +1,9 @@
-package stream
+package functional
 
 import (
 	"reflect"
+
+	"github.com/dangerous1990/functional-go/optional"
 )
 
 type filter interface {
@@ -39,19 +41,19 @@ func (stream *Stream) Filter(fn interface{}) *Stream {
 }
 
 // First
-func (stream *Stream) First() interface{} {
+func (stream *Stream) First() *optional.Optional {
 	if stream.Length() < 1 {
-		return EmptyElement
+		return optional.Empty()
 	}
-	return stream.sourceValue.Index(0).Interface()
+	return optional.Of(stream.sourceValue.Index(0).Interface())
 }
 
 // Last
-func (stream *Stream) Last() interface{} {
+func (stream *Stream) Last() *optional.Optional {
 	if stream.Length() < 1 {
-		return EmptyElement
+		return optional.Empty()
 	}
-	return stream.sourceValue.Index(stream.Length() - 1).Interface()
+	return optional.Of(stream.sourceValue.Index(stream.Length() - 1).Interface())
 }
 
 // Skip
